@@ -144,7 +144,7 @@ export class GraphRenderer {
     ctx.fillStyle = 'rgba(232,236,255,0.9)';
     ctx.font = '12px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Loss grafiği', x + 8, y + 16);
+    ctx.fillText('Loss chart', x + 8, y + 16);
   }
 
   render() {

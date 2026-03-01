@@ -17,8 +17,11 @@ export class DynamicNeuralNetwork {
     this.behavior = {
       growthStartEpoch: 120,
       improvementPruneStartEpoch: 80,
+      growthWindowSize: 40,
       growthImprovementThreshold: 0.0015,
       growthLossFloor: 0.012,
+      minHiddenNodes: 0,
+      forcedGrowthInterval: 0,
       pruneInterval: 80,
       pruneThreshold: 0.01,
       ...behavior
@@ -302,17 +305,34 @@ export class DynamicNeuralNetwork {
 
   maybeGrowOrPrune(avgLoss) {
     this.windowLosses.push(avgLoss);
-    if (this.windowLosses.length > 40) this.windowLosses.shift();
-    if (this.windowLosses.length < 40) return;
+    if (this.windowLosses.length > this.behavior.growthWindowSize) this.windowLosses.shift();
+    if (this.windowLosses.length < this.behavior.growthWindowSize) return;
 
-    const early = this.windowLosses.slice(0, 10).reduce((a, b) => a + b, 0) / 10;
-    const late = this.windowLosses.slice(-10).reduce((a, b) => a + b, 0) / 10;
+    const sampleSize = Math.max(6, Math.floor(this.behavior.growthWindowSize / 4));
+    const early = this.windowLosses.slice(0, sampleSize).reduce((a, b) => a + b, 0) / sampleSize;
+    const late = this.windowLosses.slice(-sampleSize).reduce((a, b) => a + b, 0) / sampleSize;
     const improvement = early - late;
     const hasMeaningfulImprovement = improvement > Math.max(0.0012, avgLoss * 0.08);
     const reachedNewBest = avgLoss < this.bestRecentLoss - 0.0008;
+    const hiddenCount = this.getHiddenIds().length;
+    const belowHiddenTarget = hiddenCount < this.behavior.minHiddenNodes;
+    const shouldForceGrowth =
+      this.behavior.forcedGrowthInterval > 0 &&
+      this.epoch >= this.behavior.growthStartEpoch &&
+      belowHiddenTarget &&
+      this.epoch % this.behavior.forcedGrowthInterval === 0 &&
+      avgLoss > this.behavior.growthLossFloor * 0.6;
 
     if (reachedNewBest) {
       this.bestRecentLoss = avgLoss;
+    }
+
+    if (shouldForceGrowth) {
+      const grown = this.addHiddenNodeBySplittingBestEdge();
+      if (grown) {
+        this.windowLosses = [];
+        return;
+      }
     }
 
     if (this.epoch > this.behavior.improvementPruneStartEpoch && reachedNewBest && hasMeaningfulImprovement) {

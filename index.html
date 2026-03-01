@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dinamik XOR Neural Network</title>
+  <title>Dynamic Neural Network Lab</title>
   <link rel="stylesheet" href="./assets/css/styles.css" />
 </head>
 <body>
@@ -11,57 +11,62 @@
     <div class="grid">
       <div class="panel">
         <div class="section">
-          <h2>Kontroller</h2>
+          <h2>Controls</h2>
+          <label class="field">
+            <span>Scenario</span>
+            <select id="modelSelect"></select>
+          </label>
+          <div id="modelDesc" class="small" style="margin-top:10px;"></div>
           <div class="buttons">
-            <button id="autoBtn">Baslat</button>
-            <button id="stopBtn" class="secondary hidden-control">Durdur</button>
-            <button id="resetBtn" class="warn">Sifirla</button>
+            <button id="autoBtn">Start</button>
+            <button id="stopBtn" class="secondary hidden-control">Stop</button>
+            <button id="resetBtn" class="warn">Reset</button>
           </div>
           <div class="control-grid">
             <label class="field">
-              <span>Oto durdur epoch</span>
+              <span>Auto-stop epoch</span>
               <input id="autoStopEpochInput" type="number" min="50" step="50" value="1000" />
             </label>
             <label class="field">
-              <span>Loss durma esigi</span>
+              <span>Loss stop threshold</span>
               <input id="stopLossThresholdInput" type="number" min="0" max="1" step="0.001" value="0.008" />
             </label>
             <label class="field">
-              <span>Buyume baslangici</span>
+              <span>Growth start</span>
               <input id="growthStartEpochInput" type="number" min="40" step="10" value="120" />
             </label>
             <label class="field">
-              <span>Bolunme esigi</span>
+              <span>Split threshold</span>
               <input id="splitThresholdInput" type="number" min="0" max="0.05" step="0.0005" value="0.0015" />
             </label>
             <label class="field">
-              <span>Budama araligi</span>
+              <span>Prune interval</span>
               <input id="pruneIntervalInput" type="number" min="20" step="10" value="80" />
             </label>
             <label class="field">
-              <span>Temel budama esigi</span>
+              <span>Base prune threshold</span>
               <input id="pruneThresholdInput" type="number" min="0.001" max="0.05" step="0.001" value="0.010" />
             </label>
           </div>
         </div>
 
         <div class="section">
-          <h2>Durum</h2>
+          <h2>Status</h2>
           <div class="stats">
             <div class="stat"><div class="label">Epoch</div><div id="epochVal" class="value">0</div></div>
             <div class="stat"><div class="label">Loss</div><div id="lossVal" class="value">-</div></div>
             <div class="stat"><div class="label">Hidden Node</div><div id="hiddenVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Aktif Baglanti</div><div id="edgeVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Buyume Sayisi</div><div id="growVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Budama Sayisi</div><div id="pruneVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Active Edges</div><div id="edgeVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Growth Count</div><div id="growVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Prune Count</div><div id="pruneVal" class="value">0</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2>XOR Test Sonuclari</h2>
+          <h2>Scenario Results</h2>
           <table>
             <thead>
-              <tr><th>Input</th><th>Tahmin</th><th>Beklenen</th></tr>
+              <tr><th>Input</th><th>Prediction</th><th>Expected</th></tr>
             </thead>
             <tbody id="resultBody"></tbody>
           </table>
@@ -71,7 +76,7 @@
       <div class="panel">
         <canvas id="graphCanvas" width="900" height="680"></canvas>
         <div class="section right-legend">
-          <h2>Renkler</h2>
+          <h2>Colors</h2>
           <div class="legend">
             <span><i class="dot" style="background: var(--input)"></i>Input</span>
             <span><i class="dot" style="background: var(--bias)"></i>Bias</span>
@@ -79,7 +84,7 @@
             <span><i class="dot" style="background: var(--output)"></i>Output</span>
           </div>
           <div class="small" style="margin-top:10px;">
-            Baglanti kalinligi agirligin mutlak degerini, renk ise isaretini gosterir: <b>mavi = pozitif</b>, <b>kirmizi = negatif</b>.
+            Edge thickness shows absolute weight magnitude, while color shows sign: <b>blue = positive</b>, <b>red = negative</b>.
           </div>
         </div>
       </div>

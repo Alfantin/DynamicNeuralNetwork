@@ -113,6 +113,16 @@ button {
   color: var(--text);
   font: inherit;
 }
+
+.field select {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+}
 button:hover { transform: translateY(-1px); }
 button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 button.secondary { background: #253055; }

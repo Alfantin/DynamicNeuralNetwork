@@ -1,4 +1,4 @@
-import { SELECTORS, XOR_DATASET } from './config.js';
+import { MODEL_OPTIONS, SELECTORS } from './config.js';
 import { AppController } from './ui/AppController.js';
 
 function getElements() {
@@ -7,5 +7,5 @@ function getElements() {
   );
 }
 
-const app = new AppController(getElements(), XOR_DATASET);
+const app = new AppController(getElements(), MODEL_OPTIONS);
 app.init();
