@@ -1,5 +1,5 @@
 export class DynamicNeuralNetwork {
-  constructor(inputCount, outputCount, learningRate = 0.03) {
+  constructor(inputCount, outputCount, learningRate = 0.03, behavior = {}) {
     this.learningRate = learningRate;
     this.beta1 = 0.9;
     this.beta2 = 0.999;
@@ -13,6 +13,16 @@ export class DynamicNeuralNetwork {
     this.epoch = 0;
     this.lossHistory = [];
     this.windowLosses = [];
+    this.bestRecentLoss = Infinity;
+    this.behavior = {
+      growthStartEpoch: 120,
+      improvementPruneStartEpoch: 80,
+      growthImprovementThreshold: 0.0015,
+      growthLossFloor: 0.012,
+      pruneInterval: 80,
+      pruneThreshold: 0.01,
+      ...behavior
+    };
     this.maxHiddenNodes = 8;
     this.maxDepth = 6;
     this.growCount = 0;
@@ -108,6 +118,10 @@ export class DynamicNeuralNetwork {
 
   getActiveEdges() {
     return this.edges.filter((edge) => edge.enabled && this.nodes[edge.from] && this.nodes[edge.to]);
+  }
+
+  getComplexityScore() {
+    return this.getActiveEdges().length + this.getHiddenIds().length * 2;
   }
 
   forward(inputArray) {
@@ -269,6 +283,7 @@ export class DynamicNeuralNetwork {
     }
 
     this.pruneCount += pruned;
+    return pruned;
   }
 
   removeIsolatedHiddenNodes() {
@@ -293,18 +308,69 @@ export class DynamicNeuralNetwork {
     const early = this.windowLosses.slice(0, 10).reduce((a, b) => a + b, 0) / 10;
     const late = this.windowLosses.slice(-10).reduce((a, b) => a + b, 0) / 10;
     const improvement = early - late;
+    const hasMeaningfulImprovement = improvement > Math.max(0.0012, avgLoss * 0.08);
+    const reachedNewBest = avgLoss < this.bestRecentLoss - 0.0008;
 
-    if (this.epoch > 200 && improvement < 0.0025 && avgLoss > 0.02) {
+    if (reachedNewBest) {
+      this.bestRecentLoss = avgLoss;
+    }
+
+    if (this.epoch > this.behavior.improvementPruneStartEpoch && reachedNewBest && hasMeaningfulImprovement) {
+      const adaptiveThreshold = Math.min(0.024, this.behavior.pruneThreshold + improvement * 1.6);
+      const pruned = this.pruneWeakEdges(adaptiveThreshold);
+      if (pruned > 0) this.removeIsolatedHiddenNodes();
+      this.windowLosses = [];
+      return;
+    }
+
+    if (
+      this.epoch > this.behavior.growthStartEpoch &&
+      improvement < this.behavior.growthImprovementThreshold &&
+      avgLoss > this.behavior.growthLossFloor
+    ) {
       const grown = this.addHiddenNodeBySplittingBestEdge();
       if (!grown) {
-        this.pruneWeakEdges();
+        this.pruneWeakEdges(this.behavior.pruneThreshold);
         this.removeIsolatedHiddenNodes();
       }
       this.windowLosses = [];
-    } else if (this.epoch % 120 === 0) {
-      this.pruneWeakEdges();
+    } else if (this.epoch % this.behavior.pruneInterval === 0) {
+      this.pruneWeakEdges(this.behavior.pruneThreshold);
       this.removeIsolatedHiddenNodes();
     }
+  }
+
+  updateBehavior(nextBehavior = {}) {
+    this.behavior = {
+      ...this.behavior,
+      ...nextBehavior
+    };
+  }
+
+  snapshotState() {
+    return JSON.parse(JSON.stringify({
+      epoch: this.epoch,
+      lossHistory: this.lossHistory,
+      windowLosses: this.windowLosses,
+      bestRecentLoss: this.bestRecentLoss,
+      nextNodeId: this.nextNodeId,
+      growCount: this.growCount,
+      pruneCount: this.pruneCount,
+      nodes: this.nodes,
+      edges: this.edges
+    }));
+  }
+
+  restoreState(snapshot) {
+    this.epoch = snapshot.epoch;
+    this.lossHistory = snapshot.lossHistory;
+    this.windowLosses = snapshot.windowLosses;
+    this.bestRecentLoss = snapshot.bestRecentLoss;
+    this.nextNodeId = snapshot.nextNodeId;
+    this.growCount = snapshot.growCount;
+    this.pruneCount = snapshot.pruneCount;
+    this.nodes = snapshot.nodes;
+    this.edges = snapshot.edges;
   }
 
   trainEpoch(dataset) {

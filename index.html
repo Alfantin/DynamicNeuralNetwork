@@ -8,21 +8,40 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Optimize Dinamik XOR Neural Network</h1>
-    <div class="subtitle">
-      Bu sürüm, serbest topology fikrini korurken eğitimi hızlandırmak için <b>hibrit ve kontrollü büyüme</b> kullanır. Ağ önce <b>doğrudan kısa yolları</b> öğrenir; yalnızca hata belirli bir noktadan sonra düşmüyorsa, <b>en faydalı bağlantıyı bölerek</b> yeni hidden node ekler. Böylece gereksiz arama azalır ve eğitim daha stabil olur.
-    </div>
-
     <div class="grid">
       <div class="panel">
         <div class="section">
           <h2>Kontroller</h2>
           <div class="buttons">
-            <button id="stepBtn">1 Epoch</button>
-            <button id="train100Btn">100 Epoch</button>
-            <button id="autoBtn">Otomatik Eğit</button>
-            <button id="stopBtn" class="secondary" disabled>Durdur</button>
-            <button id="resetBtn" class="warn">Sıfırla</button>
+            <button id="autoBtn">Baslat</button>
+            <button id="stopBtn" class="secondary hidden-control">Durdur</button>
+            <button id="resetBtn" class="warn">Sifirla</button>
+          </div>
+          <div class="control-grid">
+            <label class="field">
+              <span>Oto durdur epoch</span>
+              <input id="autoStopEpochInput" type="number" min="50" step="50" value="1000" />
+            </label>
+            <label class="field">
+              <span>Loss durma esigi</span>
+              <input id="stopLossThresholdInput" type="number" min="0" max="1" step="0.001" value="0.008" />
+            </label>
+            <label class="field">
+              <span>Buyume baslangici</span>
+              <input id="growthStartEpochInput" type="number" min="40" step="10" value="120" />
+            </label>
+            <label class="field">
+              <span>Bolunme esigi</span>
+              <input id="splitThresholdInput" type="number" min="0" max="0.05" step="0.0005" value="0.0015" />
+            </label>
+            <label class="field">
+              <span>Budama araligi</span>
+              <input id="pruneIntervalInput" type="number" min="20" step="10" value="80" />
+            </label>
+            <label class="field">
+              <span>Temel budama esigi</span>
+              <input id="pruneThresholdInput" type="number" min="0.001" max="0.05" step="0.001" value="0.010" />
+            </label>
           </div>
         </div>
 
@@ -32,41 +51,14 @@
             <div class="stat"><div class="label">Epoch</div><div id="epochVal" class="value">0</div></div>
             <div class="stat"><div class="label">Loss</div><div id="lossVal" class="value">-</div></div>
             <div class="stat"><div class="label">Hidden Node</div><div id="hiddenVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Aktif Bağlantı</div><div id="edgeVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Büyüme Sayısı</div><div id="growVal" class="value">0</div></div>
-            <div class="stat"><div class="label">Budama Sayısı</div><div id="pruneVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Aktif Baglanti</div><div id="edgeVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Buyume Sayisi</div><div id="growVal" class="value">0</div></div>
+            <div class="stat"><div class="label">Budama Sayisi</div><div id="pruneVal" class="value">0</div></div>
           </div>
         </div>
 
         <div class="section">
-          <h2>Açıklama</h2>
-          <div class="small">
-            Asıl amaç, klasik sabit hidden layer yapısının yerine <b>gerektiğinde büyüyen</b> ve <b>mümkün olduğunca kısa yol kullanan</b> bir ağ kurmak. Bu yüzden ağ önce direkt input→output bağlantılarını optimize eder. Ancak iyileşme durursa, <b>en yüksek etkili ve en problemli bağlantıyı</b> bölerek yeni bir ara temsil üretir.
-          </div>
-          <div style="margin-top:10px;">
-            <span class="pill">önce kısa yol öğren</span>
-            <span class="pill">durunca seçici büyüme</span>
-            <span class="pill">adam optimizasyonu</span>
-            <span class="pill">tanh hidden aktivasyonu</span>
-            <span class="pill">önem skoruyla budama</span>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>Renkler</h2>
-          <div class="legend">
-            <span><i class="dot" style="background: var(--input)"></i>Input</span>
-            <span><i class="dot" style="background: var(--bias)"></i>Bias</span>
-            <span><i class="dot" style="background: var(--hidden)"></i>Hidden</span>
-            <span><i class="dot" style="background: var(--output)"></i>Output</span>
-          </div>
-          <div class="small" style="margin-top:10px;">
-            Bağlantı kalınlığı ağırlığın mutlak değerini, renk ise işaretini gösterir: <b>mavi = pozitif</b>, <b>kırmızı = negatif</b>.
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>XOR Test Sonuçları</h2>
+          <h2>XOR Test Sonuclari</h2>
           <table>
             <thead>
               <tr><th>Input</th><th>Tahmin</th><th>Beklenen</th></tr>
@@ -78,11 +70,19 @@
 
       <div class="panel">
         <canvas id="graphCanvas" width="900" height="680"></canvas>
+        <div class="section right-legend">
+          <h2>Renkler</h2>
+          <div class="legend">
+            <span><i class="dot" style="background: var(--input)"></i>Input</span>
+            <span><i class="dot" style="background: var(--bias)"></i>Bias</span>
+            <span><i class="dot" style="background: var(--hidden)"></i>Hidden</span>
+            <span><i class="dot" style="background: var(--output)"></i>Output</span>
+          </div>
+          <div class="small" style="margin-top:10px;">
+            Baglanti kalinligi agirligin mutlak degerini, renk ise isaretini gosterir: <b>mavi = pozitif</b>, <b>kirmizi = negatif</b>.
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="footer">
-      İpucu: Bu sürüm rastgele büyümez. Önce kısa yolları dener, sonra yalnızca gerekli olduğunda bağlantıyı bölerek node ekler. Böylece esnek yapı korunurken eğitim daha hızlı ve daha kararlı olur.
     </div>
   </div>
 
